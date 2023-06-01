@@ -17,6 +17,6 @@ reqwest = {version = "0.11.16",features = ["json"]}
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.96"
 tokio = { version = "1.28.0", features = ["rt","macros"] }
-
+sha2 = "0.10"
 [registries.crates-io]
 protocol = "sparse"

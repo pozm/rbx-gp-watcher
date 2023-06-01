@@ -1,5 +1,8 @@
-use data::game_pass;
+use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher};
+
+use data::game_pass::{self, GamePass};
 use reqwest::Client;
+use sha2::{Sha256, Digest};
 
 pub mod data;
 
@@ -48,4 +51,33 @@ pub async fn send_webhook(client:&Client,webhook_url:&str,pass:&game_pass::GameP
     });
     let response = client.post(webhook_url).json(&json).send().await?.text().await?;
     Ok(response)
+}
+
+#[derive(Debug,Hash)]
+pub struct GamePassRep {
+    pub id: u64,
+    pub name: String,
+    pub price: Option<i64>,
+    pub on_sale: bool,
+    pub picture_hash: Vec<u8>,
+}
+impl GamePassRep {
+    pub async fn from_gp(client: &Client, gp:&GamePass, img_url : &str) -> reqwest::Result<Self> {
+        let img_bytes = client.get(img_url).send().await?.bytes().await?;
+        let mut hasher = Sha256::new();
+        hasher.update(&img_bytes);
+        let hash : Vec<u8> = hasher.finalize().to_vec();
+        Ok(GamePassRep {
+            id: gp.id,
+            name: gp.name.clone(),
+            price: gp.price,
+            on_sale: gp.price.is_some(),
+            picture_hash: hash,
+        })
+    }
+    pub fn get_hash(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
 }
